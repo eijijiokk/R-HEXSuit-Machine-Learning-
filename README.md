@@ -120,14 +120,6 @@ This repository may include:
 - saved CSV summaries and fold results
 - figures used for project reporting
 
-## Suggested Paper Structure
-
-- Introduction: motivation for predicting EMG from exosuit signals
-- Methods: alignment, interpolation, windowing, feature extraction, models, evaluation
-- Results: subject-specific performance, neural follow-up, cross-subject active/passive, multi-output model
-- Discussion: interpretation of subject dependence and limited generalization
-- Conclusion: feasibility within subject, weak transfer across subjects
-
 ## Current Status
 
 The main subject-specific and cross-subject experiments are complete. The strongest project conclusion is that EMG prediction from exosuit signals is feasible within a subject, but generalization across subjects remains limited.
