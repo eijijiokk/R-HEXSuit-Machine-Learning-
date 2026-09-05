@@ -1,126 +1,139 @@
-# Lower-Limb EMG Prediction From Exosuit Signals
+# Subject-Specific Prediction of Lower-Limb EMG from R-HEXsuit Signals
 
-This repository contains the code, notebooks, and experiment outputs for a machine learning study on predicting lower-limb EMG activity from exosuit sensor signals.
+This repository contains the analysis code, notebooks, summary outputs, and
+manuscript source for predicting lower-limb surface electromyography (sEMG)
+window targets from R-HEXsuit force and pressure signals.
 
-## Overview
+## Study overview
 
-The main goal of this project is to test whether exosuit measurements, primarily force and pressure signals, can be used to estimate muscle activation measured with EMG.
+The analysis includes:
 
-The study focuses on:
-- 6 subjects
-- 7 muscles: `Soleus`, `Tibialis`, `GastroMed`, `VastusMed`, `VastusLat`, `RectusFemoris`, `BicepsFemoris`
-- 2 suit conditions:
-- active assistance: `BAMon STANDARD 3x`
-- passive / resistance off: `BAMoff`
+- 6 participants;
+- 7 lower-limb muscles: Soleus, Tibialis Anterior, Gastrocnemius Medialis,
+  Vastus Medialis, Vastus Lateralis, Rectus Femoris, and Biceps Femoris;
+- Earth and simulated lunar-gravity walking;
+- active-resistance (`BAMon`) and actuation-off (`BAMoff`) conditions;
+- training-mean, Ridge, Random Forest, and XGBoost regressors.
 
-## Research Questions
+The models predict a window-level EMG-envelope target. They do not reconstruct
+the raw EMG waveform sample by sample.
 
-- Can exosuit sensor signals predict lower-limb EMG activity?
-- Which model performs best in a subject-specific setting?
-- Does the learned mapping generalize across subjects?
-- Does the learned mapping transfer across active and passive conditions?
+## Evaluation design
 
-## Pipeline Summary
+Every participant, muscle, gravity level, and suit condition is modelled
+separately. Windows remain in chronological order. Before boundary purging,
+approximately 64% of windows are allocated to training, 16% to validation, and
+20% to testing. A 20-window purge is applied on both sides of each partition
+boundary, removing 80 windows and creating an approximately 1.95 s signal-level
+gap between adjacent partitions.
 
-The main analysis pipeline:
-- aligns EMG and SUIT signals in time
-- resamples both signals to a common time grid
-- splits the data into short overlapping windows
-- predicts a window-level EMG target from suit features
+This is a **subject-specific, within-trial evaluation**. Training and testing use
+different chronological sections of the same participant recording. The study
+does not demonstrate prediction for an unseen participant, trial, session, or
+day.
 
-The final main setup used:
-- sampling frequency: `100 Hz`
-- window size: `0.1 s`
-- overlapping windows
+## Main findings
 
-Important note:
-- the models predict a window-level EMG activity target
-- they do not reconstruct the raw EMG waveform sample by sample
+Across 168 participant--muscle--gravity--suit comparisons, XGBoost:
 
-## Models Evaluated
+- outperformed the training-mean baseline in 147/168 comparisons (87.5%);
+- outperformed Ridge in 131/168 comparisons (78.0%);
+- outperformed Random Forest in 75/168 comparisons (44.6%).
 
-- Ridge regression
-- Random Forest
-- XGBoost
-- CNN-LSTM
-- Deeper CNN-LSTM follow-up
-- Multi-output CNN-LSTM across all 7 muscles
+The results support the use of nonlinear tree ensembles over constant and linear
+baselines, but they do **not** demonstrate a consistent advantage for XGBoost
+over Random Forest.
 
-## Main Experiments
+Median XGBoost test performance was descriptively higher under Earth than
+simulated lunar gravity for every muscle in both suit states. No inferential
+population-level gravity effect was tested. Performance varied substantially
+between participants and included extreme negative test R-squared values in
+low-variance target sections; these observations are retained and reported.
 
-### 1. Subject-Specific Prediction
+Participant 2 is used only for illustrative prediction traces. This participant
+was selected objectively as the participant with the smallest median absolute
+distance from the corresponding six-participant cell medians across all 28
+muscle--gravity--suit combinations. Numerical conclusions use all six
+participants.
 
-Models were trained and tested within the same subject.
+## Repository structure
 
-Main result:
-- all 7 muscles achieved positive mean `R2`
-- XGBoost was the strongest overall model
+```text
+notebooks/
+  RHEXsuit_BAMon_Complete_Analysis.ipynb
+  RHEXsuit_BAMoff_Complete_Analysis.ipynb
 
-Best subject-specific active results at `0.1 s`:
-- `VastusLat`: `0.540`
-- `GastroMed`: `0.492`
-- `VastusMed`: `0.474`
-- `Soleus`: `0.468`
-- `Tibialis`: `0.389`
-- `RectusFemoris`: `0.377`
-- `BicepsFemoris`: `0.364`
+src/
+  emg_exosuit_pipeline_colab.py
+  generate_all_participant2_overleaf_figures.py
 
-### 2. Deeper CNN-LSTM Follow-Up
+paper/
+  EMG_RHEXsuit_revised_IEEE.tex
+  figures/
 
-A deeper CNN-LSTM architecture was tested, especially for `Soleus` and `RectusFemoris`.
+resuls/
+  BAMon/
+  BAMoff/
 
-Main result:
-- the deeper CNN-LSTM improved over the earlier smaller neural model
-- it still did not outperform XGBoost
+literature_search/
+  Novelty_Literature_Search_Protocol.md
+  Novelty_Search_Log_Template.csv
+  Novelty_Screening_Template.csv
+```
 
-### 3. Cross-Subject Robustness
+Raw participant data are not included. Their use and redistribution remain
+subject to the governance and ethics requirements of the originating study.
 
-Cross-subject experiments used subject-level train/validation/test splits:
-- train `[1, 2, 3, 4]`, test `[5]`, val `[6]`
-- train `[1, 2, 5, 6]`, test `[3]`, val `[4]`
-- train `[3, 4, 5, 6]`, test `[1]`, val `[2]`
+## Running the analysis 
 
-This was evaluated for:
-- active condition
-- passive condition
+1. Open the BAMon notebook in Google Colab and run all cells.
+2. Confirm that `results_BAMon_complete_analysis` was created in Google Drive.
+3. Run the BAMoff notebook using the same package versions.
+4. Confirm that `results_BAMoff_complete_analysis` was created.
+5. Run `generate_all_participant2_overleaf_figures.py` to export the manuscript
+   figures without retraining the models.
 
-Main result:
-- performance dropped sharply compared with the subject-specific setting
-- mean test `R2` became negative across muscles in both active and passive cross-subject runs
+The expected source-data folders in Colab are:
 
-### 4. Multi-Output Neural Network
+```text
+/content/drive/MyDrive/data/emg_csv
+/content/drive/MyDrive/data/suit2
+```
 
-A shared CNN-LSTM was trained to predict all 7 muscles simultaneously in the cross-subject setting.
+If the folders differ, edit `EMG_FOLDER` and `SUIT_FOLDER` in the notebook
+configuration cell.
 
-Main result:
-- cross-subject performance remained poor
-- the shared neural model did not solve the generalization problem
+## Results recommended for version control
 
-## Key Findings
+The repository should contain derived, non-identifying outputs required to
+verify the reported results, including:
 
-- Exosuit sensor signals can estimate lower-limb EMG reasonably well within a subject.
-- XGBoost was the best overall model in the final subject-specific setup.
-- A deeper CNN-LSTM improved neural-model performance but did not surpass XGBoost.
-- Cross-subject generalization was poor in both active and passive conditions.
-- The mapping from exosuit signals to EMG appears strongly individual-specific.
+- `model_comparison_subject_metrics.csv`;
+- `model_comparison_summary.csv`;
+- `paired_xgboost_comparisons.csv`;
+- `paired_xgboost_summary.csv`;
+- `xgboost_paper_summary.csv`;
+- `chronological_split_audit.csv`;
+- `xgboost_subject_metrics_with_diagnostics.csv`;
+- `flagged_results_for_audit.csv`;
+- `software_versions.json`;
+- `analysis_configuration.json`;
+- `feature_names_124.csv`.
 
-## Practical Interpretation
+Do not upload raw participant recordings, identifiers, credentials, tokens, or
+restricted data.
 
-The project suggests that exosuit force and pressure signals contain useful information about muscle activity, but the learned relationship is much more reliable within a person than across different people.
+## Manuscript
 
-In other words:
-- subject-specific modeling works
-- cross-subject transfer remains difficult
+The IEEE manuscript source is available in `paper/`. The manuscript reports
+results from all six participants, while participant-2 signal traces are
+illustrative. Additional individual-muscle traces may be moved to supplementary
+material to meet journal page limits.
 
-## Repository Contents
+## Important interpretation
 
-This repository may include:
-- analysis notebooks
-- Python scripts for preprocessing, feature extraction, and modeling
-- saved CSV summaries and fold results
-- figures used for project reporting
-
-## Current Status
-
-The main subject-specific and cross-subject experiments are complete. The strongest project conclusion is that EMG prediction from exosuit signals is feasible within a subject, but generalization across subjects remains limited.
+This work is evidence of within-participant, within-trial feasibility after
+paired EMG/exosuit calibration. It is not a calibration-free EMG estimator for a
+new user. Cross-participant, cross-trial, and cross-session robustness require
+separate evaluation.
 
