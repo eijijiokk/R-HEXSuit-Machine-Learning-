@@ -1,0 +1,14 @@
+.DS_Store
+__pycache__/
+*.py[cod]
+.ipynb_checkpoints/
+
+# Raw or restricted participant data must not be committed.
+data/
+raw_data/
+participant_data/
+
+# Local archives and temporary files.
+*.zip
+*.tmp
+*.log
