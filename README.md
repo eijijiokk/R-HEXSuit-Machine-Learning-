@@ -71,7 +71,7 @@ paper/
   EMG_RHEXsuit_revised_IEEE.tex
   figures/
 
-resuls/
+results/
   BAMon/
   BAMoff/
 
