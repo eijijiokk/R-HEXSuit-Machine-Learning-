@@ -75,10 +75,6 @@ results/
   BAMon/
   BAMoff/
 
-literature_search/
-  Novelty_Literature_Search_Protocol.md
-  Novelty_Search_Log_Template.csv
-  Novelty_Screening_Template.csv
 ```
 
 Raw participant data are not included. Their use and redistribution remain
